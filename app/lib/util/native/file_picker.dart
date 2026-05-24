@@ -144,11 +144,12 @@ class PickFileAction extends AsyncGlobalAction {
 
 Future<void> _pickFiles(BuildContext context, Ref ref) async {
   // Make file picking follow the same flow as folder picking on Android.
-  // - Request storage permission (for non-SAF fallback)
-  // - Show loading dialog and wait shortly
-  // - Use SAF-based picker for modern Android, otherwise fallback to openFiles()
+  // Request storage permission only on the non-SAF fallback (older Android / platforms that need raw paths).
 
-  if (checkPlatform([TargetPlatform.android])) {
+  final bool isAndroid = checkPlatform([TargetPlatform.android]);
+  final bool isSaf = defaultTargetPlatform == TargetPlatform.android && (ref.read(deviceInfoProvider).androidSdkInt ?? 0) >= android_channel.contentUriMinSdk;
+
+  if (isAndroid && !isSaf) {
     try {
       await Permission.storage.request();
     } catch (e) {
@@ -170,7 +171,7 @@ Future<void> _pickFiles(BuildContext context, Ref ref) async {
   await sleepAsync(200);
 
   try {
-    if (defaultTargetPlatform == TargetPlatform.android && (ref.read(deviceInfoProvider).androidSdkInt ?? 0) >= android_channel.contentUriMinSdk) {
+    if (isSaf) {
       // Use SAF-based picker on modern Android (returns android_channel.FileInfo list)
       final result = await android_channel.pickFilesAndroid();
       if (result != null) {
