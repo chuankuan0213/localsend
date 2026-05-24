@@ -72,15 +72,21 @@ jobs:
         working-directory: ${{ env.APK_BUILD_DIR }}/app
         run: flutter pub get
 
-      - name: Build APK
+      - name: Build APK (debug)
         working-directory: ${{ env.APK_BUILD_DIR }}/app
-        run: flutter build apk --split-per-abi
+        run: flutter build apk --debug
 
-      - name: Upload APK
+      - name: Upload APK as artifact
         uses: actions/upload-artifact@v6
         with:
           name: apk-result
-          path: |
-            ${{ env.APK_BUILD_DIR }}/app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            ${{ env.APK_BUILD_DIR }}/app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            ${{ env.APK_BUILD_DIR }}/app/build/app/outputs/flutter-apk/app-x86_64-release.apk
+          path: ${{ env.APK_BUILD_DIR }}/app/build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Create GitHub release and upload APK
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ needs.build.outputs.version }}-debug
+          name: "v${{ needs.build.outputs.version }} (debug)"
+          files: ${{ env.APK_BUILD_DIR }}/app/build/app/outputs/flutter-apk/app-debug.apk
+          draft: false
+          prerelease: true
